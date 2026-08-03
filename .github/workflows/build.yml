@@ -11,19 +11,17 @@ jobs:
     - name: 📥 Checkout Repository
       uses: actions/checkout@v4
 
-    - name: 🔧 Install Theos (Manual)
+    - name: 🔧 Install Theos (Manual Clone)
       run: |
-        export THEOS=~/theos
-        git clone --recursive https://github.com/theos/theos.git $THEOS
-        echo "THEOS=$THEOS" >> $GITHUB_ENV
+        git clone --recursive https://github.com/theos/theos.git ~/theos
+        echo "THEOS=${HOME}/theos" >> $GITHUB_ENV
 
     - name: 📦 Download iOS SDK
       run: |
-        export THEOS=~/theos
         curl -LO https://github.com/theos/sdks/archive/refs/heads/master.zip
         unzip -q master.zip
-        mkdir -p $THEOS/sdks
-        mv sdks-master/*.sdk $THEOS/sdks/ 2>/dev/null || true
+        mkdir -p ~/theos/sdks
+        mv sdks-master/*.sdk ~/theos/sdks/ 2>/dev/null || true
         rm -rf master.zip sdks-master
 
     - name: 🏗️ Build dylib
