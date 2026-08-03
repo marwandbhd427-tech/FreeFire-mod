@@ -8,20 +8,33 @@ jobs:
     runs-on: macos-latest
     
     steps:
-    - name: Checkout
+    - name: 📥 Checkout Repository
       uses: actions/checkout@v4
 
-    - name: Install Theos
+    - name: 🔧 Install Theos (Manual)
       run: |
-        bash -c "$(curl -fsSL https://raw.githubusercontent.com/theos/theos/master/bin/install-theos)"
-        echo "THEOS=$(pwd)/theos" >> $GITHUB_ENV
+        export THEOS=~/theos
+        git clone --recursive https://github.com/theos/theos.git $THEOS
+        echo "THEOS=$THEOS" >> $GITHUB_ENV
 
-    - name: Build
+    - name: 📦 Download iOS SDK
       run: |
-        export THEOS=$(pwd)/theos
+        export THEOS=~/theos
+        curl -LO https://github.com/theos/sdks/archive/refs/heads/master.zip
+        unzip -q master.zip
+        mkdir -p $THEOS/sdks
+        mv sdks-master/*.sdk $THEOS/sdks/ 2>/dev/null || true
+        rm -rf master.zip sdks-master
+
+    - name: 🏗️ Build dylib
+      run: |
+        export THEOS=~/theos
+        export PATH=$THEOS/bin:$PATH
         make
+      env:
+        THEOS: ~/theos
 
-    - name: Upload
+    - name: 📤 Upload dylib
       uses: actions/upload-artifact@v4
       with:
         name: FreeFireVIP-dylib
