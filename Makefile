@@ -1,48 +1,36 @@
-name: Build FreeFireVIP dylib
+ARCHS = arm64
+TARGET = iphone:clang:latest:14.0
 
-on:
-  workflow_dispatch:
+include $(THEOS)/makefiles/common.mk
 
-jobs:
-  build:
-    runs-on: macos-latest
-    
-    steps:
-    - name: 📥 Checkout
-      uses: actions/checkout@v4
+LIBRARY_NAME = FreeFireVIP
 
-    - name: 📦 Clone ImGui
-      run: |
-        git clone --depth 1 https://github.com/ocornut/imgui.git IMGUI
-        cp IMGUI/backends/imgui_impl_metal.h IMGUI/
-        cp IMGUI/backends/imgui_impl_metal.mm IMGUI/
+IMGUI_DIR = IMGUI
+DOBBY_DIR = 5Toubun
 
-    - name: 🔧 Install Theos
-      run: |
-        git clone --recursive https://github.com/theos/theos.git ~/theos
-        echo "THEOS=${HOME}/theos" >> $GITHUB_ENV
+# ✅ نبني ملفات Dobby المصدرية مباشرة مع المشروع
+FreeFireVIP_FILES = main_fixed.mm \
+    $(IMGUI_DIR)/imgui.cpp \
+    $(IMGUI_DIR)/imgui_draw.cpp \
+    $(IMGUI_DIR)/imgui_widgets.cpp \
+    $(IMGUI_DIR)/imgui_tables.cpp \
+    $(IMGUI_DIR)/imgui_impl_metal.mm \
+    $(DOBBY_DIR)/source/Interceptor.cpp \
+    $(DOBBY_DIR)/source/InterceptorArm64.cpp \
+    $(DOBBY_DIR)/source/ClosureTrampoline.cpp \
+    $(DOBBY_DIR)/source/InstructionRelocation/InstructionRelocationArm64.cpp \
+    $(DOBBY_DIR)/source/MemoryAllocator/CodeBuffer.cpp \
+    $(DOBBY_DIR)/source/MemoryAllocator/AssemblyCodeBuilder.cpp \
+    $(DOBBY_DIR)/source/TrampolineBridge/TrampolineBridge.cpp
 
-    - name: 📦 Download iOS SDK
-      run: |
-        curl -LO https://github.com/theos/sdks/archive/refs/heads/master.zip
-        unzip -q master.zip
-        mkdir -p ~/theos/sdks
-        mv sdks-master/*.sdk ~/theos/sdks/ 2>/dev/null || true
-        rm -rf master.zip sdks-master
+FreeFireVIP_CFLAGS = -fobjc-arc -std=c++17 -Wno-deprecated-declarations \
+    -I$(IMGUI_DIR) \
+    -I$(DOBBY_DIR)/include \
+    -I$(DOBBY_DIR)/source \
+    -DDOBBY_DEBUG=OFF
 
-    - name: 🔨 Clone Dobby (بدون بناء macOS)
-      run: |
-        git clone --depth 1 https://github.com/jmpews/Dobby.git 5Toubun
+FreeFireVIP_LDFLAGS = -framework Metal -framework MetalKit -framework Foundation -framework UIKit
 
-    - name: 🏗️ Build dylib (مع Dobby كـ static)
-      run: |
-        export THEOS=~/theos
-        export PATH=$THEOS/bin:$PATH
-        # نضيف ملفات Dobby مباشرة للبناء بدل libdobby.dylib
-        make
+FreeFireVIP_LIBRARIES = c++
 
-    - name: 📤 Upload dylib
-      uses: actions/upload-artifact@v4
-      with:
-        name: FreeFireVIP-dylib
-        path: .theos/obj/debug/*.dylib
+include $(THEOS_MAKE_PATH)/library.mk
