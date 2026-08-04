@@ -8,10 +8,24 @@ jobs:
     runs-on: macos-latest
     
     steps:
-    - name: 📥 Checkout Repository
+    - name: 📥 Checkout
       uses: actions/checkout@v4
 
-    - name: 🔧 Install Theos (Manual Clone)
+    - name: 📦 Clone ImGui
+      run: |
+        git clone --depth 1 https://github.com/ocornut/imgui.git IMGUI
+        cp IMGUI/backends/imgui_impl_metal.h IMGUI/
+        cp IMGUI/backends/imgui_impl_metal.mm IMGUI/
+
+    - name: 🔧 Clone & Build Dobby
+      run: |
+        git clone --depth 1 https://github.com/jmpews/Dobby.git 5Toubun
+        cd 5Toubun
+        mkdir build && cd build
+        cmake .. -DDOBBY_DEBUG=OFF -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_BUILD_TYPE=Release
+        make -j$(sysctl -n hw.ncpu)
+
+    - name: 🔨 Install Theos
       run: |
         git clone --recursive https://github.com/theos/theos.git ~/theos
         echo "THEOS=${HOME}/theos" >> $GITHUB_ENV
@@ -29,8 +43,6 @@ jobs:
         export THEOS=~/theos
         export PATH=$THEOS/bin:$PATH
         make
-      env:
-        THEOS: ~/theos
 
     - name: 📤 Upload dylib
       uses: actions/upload-artifact@v4
