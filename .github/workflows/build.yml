@@ -17,7 +17,14 @@ jobs:
         cp IMGUI/backends/imgui_impl_metal.h IMGUI/
         cp IMGUI/backends/imgui_impl_metal.mm IMGUI/
 
-    - name: 🔧 Install Theos
+    - name: 🔧 Clone Dobby
+      run: |
+        git clone --depth 1 https://github.com/jmpews/Dobby.git 5Toubun
+        echo "=== ملفات Dobby اللي لقيناهم ==="
+        find 5Toubun/source -type f \( -name "*.cpp" -o -name "*.cc" -o -name "*.mm" -o -name "*.c" \) | sort
+        echo "=================================="
+
+    - - name: 🔨 Install Theos
       run: |
         git clone --recursive https://github.com/theos/theos.git ~/theos
         echo "THEOS=${HOME}/theos" >> $GITHUB_ENV
@@ -30,15 +37,10 @@ jobs:
         mv sdks-master/*.sdk ~/theos/sdks/ 2>/dev/null || true
         rm -rf master.zip sdks-master
 
-    - name: 🔨 Clone Dobby (بدون بناء macOS)
-      run: |
-        git clone --depth 1 https://github.com/jmpews/Dobby.git 5Toubun
-
-    - name: 🏗️ Build dylib (مع Dobby كـ static)
+    - name: 🏗️ Build dylib
       run: |
         export THEOS=~/theos
         export PATH=$THEOS/bin:$PATH
-        # نضيف ملفات Dobby مباشرة للبناء بدل libdobby.dylib
         make
 
     - name: 📤 Upload dylib
